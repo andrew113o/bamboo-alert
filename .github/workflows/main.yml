@@ -2,8 +2,8 @@ name: Check Bamboo Booking
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 10분마다 자동 실행
-  workflow_dispatch:        # 수동 실행 버튼 활성화
+    - cron: '*/22 * * * *'  # 22분마다 실행 (월 2,000분 한도 97% 최적화)
+  workflow_dispatch:
 
 jobs:
   check:
