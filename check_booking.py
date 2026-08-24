@@ -11,8 +11,7 @@ CHAT_ID = "8850473772"
 # 감시할 목표 조건
 TARGET_DATES = ["10-09", "10-10", "10-17", "10-24", "10-31", "10/09", "10/10", "10/17", "10/24", "10/31"]
 TARGET_ROOMS = ["트레일러1", "트레일러2", "트레일러3", "트레일러하우스1", "트레일러하우스2", "트레일러하우스3", "롯지4", "롯지5", "롯지6"]
-
-RESERVATION_URL = "https://bamboosound.co.kr/reservation.php"
+OCTOBER_DIRECT_URL = "https://bamboosound.co.kr/reservation.php?month=2026-10"
 
 def send_telegram(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -20,7 +19,7 @@ def send_telegram(msg):
         "chat_id": CHAT_ID,
         "text": msg,
         "parse_mode": "HTML",
-        "disable_web_page_preview": False  # 링크 미리보기 활성화
+        "disable_web_page_preview": False
     }
     try:
         requests.post(url, json=payload, timeout=10)
@@ -31,13 +30,11 @@ def check_once():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
-    
     try:
-        response = requests.get(RESERVATION_URL, headers=headers, timeout=15)
+        response = requests.get(OCTOBER_DIRECT_URL, headers=headers, timeout=15)
         response.encoding = response.apparent_encoding
         soup = BeautifulSoup(response.text, "html.parser")
         
-        # 내부 프레임 감지
         iframe = soup.find("iframe")
         if iframe and iframe.get("src"):
             target_url = iframe.get("src")
@@ -55,19 +52,17 @@ def check_once():
                     if r in page_text and ("예약가능" in page_text or "예약하기" in page_text):
                         available_found.append(f"▪️ [{d}] {r}")
 
-        # 빈자리 탐지 시 예약 사이트 링크를 포함해 전송
         if available_found:
             msg = (
                 f"🔔 <b>[밤부사운드 빈자리 발견!]</b>\n\n"
                 + "\n".join(available_found) + "\n\n"
-                f"🔗 <b>지금 바로 예약하기:</b>\n{RESERVATION_URL}\n\n"
+                f"🔗 <b>10월 예약창 바로가기:</b>\n{OCTOBER_DIRECT_URL}\n\n"
                 f"⚠️ <i>취소표는 선착순 마감되니 빠르게 접속하세요!</i>"
             )
             send_telegram(msg)
             print("빈자리 발견 및 알림 발송 완료!")
             return True
         else:
-            print("빈자리 없음 (감시 중...)")
             return False
             
     except Exception as e:
@@ -91,14 +86,15 @@ if __name__ == "__main__":
             "<code>밤부사운드 10월 예약 감시 프로그램이 종료되었습니다. GitHub 저장소(bamboo-alert) 삭제/비활성화 방법과 텔레그램 봇 정리 방법을 단계별로 안내해 주세요.</code>"
         )
         send_telegram(notice_msg)
-        print("10월 감시 기간이 만료되어 안내 메시지 발송 후 종료합니다.")
+        print("만료 안내 발송 완료")
         sys.exit(0)
 
-    # 25분간 60초 주기로 감시
+    # 1회 실행 시 기본 1분을 채워 50초 동안 10초 간격으로 5회 연속 체크
     start_time = time.time()
-    while time.time() - start_time < 25 * 60:
+    while time.time() - start_time < 50:
         found = check_once()
         if found:
-            time.sleep(180)  # 알림 후 3분 대기 (중복 폭탄 방지)
-        else:
-            time.sleep(60)   # 미발견 시 1분 대기
+            break
+        time.sleep(10)
+        
+    print("1회 감시 사이클 정상 완료")
