@@ -17,7 +17,8 @@ def send_telegram(msg):
         "parse_mode": "HTML"
     }
     try:
-        requests.post(url, json=payload, timeout=10)
+        response = requests.post(url, json=payload, timeout=10)
+        print("텔레그램 응답 상태코드:", response.status_code)
     except Exception as e:
         print(f"텔레그램 발송 실패: {e}")
 
@@ -33,7 +34,7 @@ def check_bamboo_reservation():
         
         soup = BeautifulSoup(response.text, "html.parser")
         
-        # iframe(외부 예약 연동창) 구조 감지
+        # iframe 구조 감지
         iframe = soup.find("iframe")
         if iframe and iframe.get("src"):
             target_url = iframe.get("src")
@@ -45,7 +46,7 @@ def check_bamboo_reservation():
 
         page_text = soup.get_text()
         
-        # 예약 가능 여부 탐지 (사이트 문구 패턴 파악)
+        # 예약 가능 여부 탐지
         available_found = []
         for d in TARGET_DATES:
             if d in page_text:
@@ -64,4 +65,8 @@ def check_bamboo_reservation():
         print(f"체크 중 오류 발생: {e}")
 
 if __name__ == "__main__":
+    # 1. 즉시 테스트 메시지 1회 발송
+    send_telegram("🔔 <b>[연동 테스트]</b> 텔레그램 알림 봇이 정상적으로 연결되었습니다!")
+    
+    # 2. 예약 사이트 감시 실행
     check_bamboo_reservation()
